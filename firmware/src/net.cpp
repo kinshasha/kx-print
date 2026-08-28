@@ -278,7 +278,7 @@ static bool start_sta() {
 }
 
 void net_begin(bool force_ap) {
-  EEPROM.begin();
+  // virtualEEPROM: no begin(); EEPROM.begin() is an iterator.
   creds_load();
 
   if (WiFi.status() == WL_NO_MODULE) {
