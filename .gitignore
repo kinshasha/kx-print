@@ -1,0 +1,12 @@
+.pio/
+.vscode/
+.idea/
+firmware/.pio/
+firmware/secrets.h
+secrets.h
+*.elf
+*.bin
+*.hex
+*.map
+.DS_Store
+__pycache__/
