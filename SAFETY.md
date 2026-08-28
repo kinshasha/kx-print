@@ -1,4 +1,4 @@
-# KX-Print — lid card
+# KX-Print lid card
 
 Tape this inside the HB6013 lid. Read it before the cable goes in.
 

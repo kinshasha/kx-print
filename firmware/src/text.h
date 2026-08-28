@@ -22,5 +22,5 @@ void text_save(TextState *s);
 void text_load(const TextState *s);
 
 // Stream one incoming byte. May emit 0..N output bytes via emit().
-// Returns false if emit() fails — state is unchanged (caller may retry).
+// Returns false if emit() fails. State is unchanged (caller may retry).
 bool text_feed(uint8_t c, text_emit_fn emit, void *ctx);

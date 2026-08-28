@@ -6,7 +6,7 @@
 // KX-R60-class Mini-DIN-8 (xunker, tested KX-R435). KX-R540 treated the same.
 //
 // Idle: /ONLINE HIGH, /STB HIGH, DATA HIGH. ACK idles LOW (typewriter 10k pulldown).
-// Do NOT enable INPUT_PULLUP on ACK — it fights that pulldown.
+// Do NOT enable INPUT_PULLUP on ACK. It fights that pulldown.
 //
 // Per bit: DATA, 50 us, /STB HIGH→LOW, wait ACK HIGH, /STB LOW→HIGH, wait ACK LOW.
 // This is the opposite of RP-K105 / DE-9 thermal writers. Do not wait ACK-low-then-high.

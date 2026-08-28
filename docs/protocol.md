@@ -11,7 +11,7 @@ public docs do not confirm R540 timing independently, so we treat it as
 If some other write-up disagrees with this file, **this file + `kx_protocol.cpp`
 win**.
 
-## Pinout (Mini-DIN-8) — matches the spec and xunker
+## Pinout (Mini-DIN-8), matches the spec and xunker
 
 | Pin | Name     | Notes |
 |-----|----------|--------|
@@ -37,7 +37,7 @@ and you will get the 1.5 s timeout.
 | DATA     | HIGH  |
 | /ACK     | **LOW** (typewriter, ~10 k pulldown) |
 
-Host GPIO: D5/D6/D7 idle HIGH. D4 is `INPUT` — **no pull-up**.
+Host GPIO: D5/D6/D7 idle HIGH. D4 is `INPUT`, **no pull-up**.
 
 ## Byte send (LSB first)
 
@@ -57,7 +57,7 @@ ACK timeout: **1500 ms** per wait. That is ours (watchdog). The original
 adapter code waits forever; we will not. On timeout: safe idle, abort the
 job, serial error, LED `!`.
 
-## ACK polarity — do not mix this up
+## ACK polarity: do not mix this up
 
 **KX-R60 Mini-DIN-8 (this project):**
 ACK idles **LOW**, pulses **HIGH** while /STB is low, returns **LOW** after
@@ -75,7 +75,7 @@ the thermal-writer polarity.
 ## What we assumed (R540 unconfirmed)
 
 - DATA polarity HIGH=1, LOW=0 (xunker TXD). If the first test character
-  prints as garbage bits, this is the first thing to flip — but do that
+  prints as garbage bits, this is the first thing to flip, but do that
   only after ACK idle is confirmed LOW and CODE+E is on.
 - /ONLINE is per byte, not per job. Matches the RP-K100 / KX-R60 write-up.
 - 50 µs setup is a floor, not a bit-rate. The daisywheel is the clock;
@@ -89,7 +89,7 @@ the thermal-writer polarity.
 
 ## Text filter (host side, before bits)
 
-- ASCII 0x20–0x7E pass through
+- ASCII 0x20-0x7E pass through
 - LF without a preceding CR becomes CR+LF; CR/LF already paired are kept
 - TAB → 4 spaces
 - FF 0x0C → CR+LF to next TOF
@@ -102,7 +102,7 @@ the thermal-writer polarity.
 - Raw TCP **9100**: bytes in, same text filter, stream to the ring
 - LPR **515**: RFC 1179 receive-job. Control file is read and thrown away.
   Data file is streamed. Control-file-first *or* data-file-first (CUPS
-  often sends `df` first). ACK octet is `0x00`. Source ports 721–731 are
+  often sends `df` first). ACK octet is `0x00`. Source ports 721-731 are
   **not** enforced (modern lpr/CUPS will not bind them).
 - SRAM is 32 kB. There is no whole-job spool. The ring is 2 kB. TCP
   back-pressure does the rest.
@@ -111,7 +111,7 @@ the thermal-writer polarity.
 
 On the first byte of a job (unless dry-run) firmware reads ACK:
 
-- LOW → `ACK idle LOW — KX-R60-class, good to send.`
+- LOW → `ACK idle LOW. KX-R60-class, good to send.`
 - HIGH → warning: cable, pulldown, CODE+E, or you picked up a Mac cable.
 
 Then send **one character**. See `docs/bring-up.md`.

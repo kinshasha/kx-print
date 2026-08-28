@@ -282,7 +282,7 @@ void net_begin(bool force_ap) {
   creds_load();
 
   if (WiFi.status() == WL_NO_MODULE) {
-    Serial.println(F("WiFi module missing — serial print still works"));
+    Serial.println(F("WiFi module missing, serial print still works"));
     g_mode = NET_OFF;
     return;
   }

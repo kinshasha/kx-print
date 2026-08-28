@@ -17,7 +17,7 @@ Numbered on purpose. Do not skip ahead to “print War and Peace”.
 5. Continuity Mini-DIN-8 pin 8 → DIN-5 pin 5 → UNO D7 (/ONLINE).
 6. **Confirm Mini-DIN-8 pin 5 goes nowhere.** Open circuit to every UNO
    pin, including VIN, 5 V, 3.3 V, and every GPIO.
-7. Confirm it is not a Mac printer cable (those swap pins — see wiring).
+7. Confirm it is not a Mac printer cable (those swap pins; see wiring).
 8. Label both DIN ends **KX-R ONLY**.
 
 ## 2. Firmware, no typewriter yet
@@ -35,7 +35,7 @@ Numbered on purpose. Do not skip ahead to “print War and Peace”.
    `http://192.168.4.1`.
 2. Otherwise STA using EEPROM or `secrets.h`.
 3. Ping `kxr540.local`. mDNS is `ArduinoMDNS`; some Android phones will
-   not resolve `.local` — use the IP from `status`.
+   not resolve `.local`. Use the IP from `status`.
 
 ## 4. Idle levels, still no printing
 

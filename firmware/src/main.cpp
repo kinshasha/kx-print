@@ -20,7 +20,7 @@ static void handle_buttons() {
   if (ui_cancel_hold()) {
     job_clear_queue();
     if (job_error()) job_clear_error();
-    Serial.println(F("CANCEL held — queue cleared"));
+    Serial.println(F("CANCEL held: queue cleared"));
   } else if (ui_cancel_short()) {
     if (job_error()) {
       job_clear_error();
@@ -57,11 +57,11 @@ void setup() {
   Serial.println();
   Serial.println(F("KX-Print " KX_FW_VERSION));
   Serial.println(F("Panasonic KX-R540 Wi-Fi printer"));
-  Serial.println(F("SAFETY: Mini-DIN pin 5 is +12 V — never connect it to the UNO."));
+  Serial.println(F("SAFETY: Mini-DIN pin 5 is +12 V. Never connect it to the UNO."));
 
   bool force_ap = ui_boot_hold_cancel();
   if (force_ap) {
-    Serial.println(F("CANCEL held at boot — Wi-Fi config reset"));
+    Serial.println(F("CANCEL held at boot: Wi-Fi config reset"));
   }
 
   net_begin(force_ap);

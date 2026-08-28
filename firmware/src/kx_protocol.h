@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-void kx_protocol_init();          // safe idle FIRST — call before anything else
+void kx_protocol_init();          // safe idle FIRST. Call before anything else
 void kx_safe_idle();
 bool kx_send_byte(uint8_t b);     // false on ACK timeout or abort
 bool kx_ack_idle_low();           // probe: KX-R60-class ACK idles LOW

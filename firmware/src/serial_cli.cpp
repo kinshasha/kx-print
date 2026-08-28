@@ -110,7 +110,7 @@ static void cmd(char *s) {
       job_end();
     }
   } else {
-    Serial.println(F("unknown — try help"));
+    Serial.println(F("unknown, try help"));
   }
 }
 

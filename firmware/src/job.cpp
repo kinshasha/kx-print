@@ -203,7 +203,7 @@ void job_print_poll() {
       Serial.println(F("WARN: ACK is not idle LOW. Check cable, 10k pulldown,"));
       Serial.println(F("      printer mode CODE+E (LCD: ON LINE). Not a Mac cable?"));
     } else {
-      Serial.println(F("ACK idle LOW — KX-R60-class, good to send."));
+      Serial.println(F("ACK idle LOW. KX-R60-class, good to send."));
     }
     g_probed = true;
   }
@@ -218,7 +218,7 @@ void job_print_poll() {
     g_printing = false;
     if (kx_last_timeout()) {
       g_error = true;
-      Serial.println(F("ERROR: ACK timeout — safe idle. CANCEL to recover."));
+      Serial.println(F("ERROR: ACK timeout, safe idle. CANCEL to recover."));
     }
     // put the byte back if abort (pause/cancel) rather than timeout? cancel discards.
     if (kx_last_timeout()) {

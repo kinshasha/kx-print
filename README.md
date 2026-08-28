@@ -3,7 +3,7 @@
 A Panasonic **KX-R540** electronic typewriter, on Wi-Fi, as a text printer.
 
 Arduino UNO R4 WiFi (Jaycar XC9211) bit-bangs the Mini-DIN-8 computer
-port — not UART, not Centronics — and accepts raw TCP **9100** plus
+port (not UART, not Centronics) and accepts raw TCP **9100** plus
 LPR **515**. Hostname `kxr540.local`, queue `kxr540`.
 
 Workshop project. Parts from Jaycar. If you wanted an IPP stack and a
@@ -20,7 +20,7 @@ card: [`SAFETY.md`](SAFETY.md). Wiring: [`docs/wiring.md`](docs/wiring.md).
 - Share **signal GND only**
 - Continuity-test the cable, all five pins, before it meets the typewriter
 - Do **not** use a Mac printer / null-modem Mini-DIN-8 cable (pins are swapped)
-- Label the DIN **KX-R ONLY** — it looks like MIDI and is not
+- Label the DIN **KX-R ONLY**. It looks like MIDI and is not
 - First print is **one character**
 
 Typewriter in printer mode: **CODE + E**, LCD shows **ON LINE**.
@@ -81,7 +81,7 @@ uncertainties) are in [`docs/protocol.md`](docs/protocol.md).
 
 ## Flash
 
-UNO R4 WiFi, PlatformIO, **Renesas** core — not an ESP32 sketch.
+UNO R4 WiFi, PlatformIO, **Renesas** core, not an ESP32 sketch.
 
 ```bash
 cd firmware

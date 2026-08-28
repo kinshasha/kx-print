@@ -112,7 +112,7 @@ void ui_render() {
   } else if (cancelled_until && (int32_t)(millis() - cancelled_until) < 0) {
     g = UI_CANCELLED;
   } else if (!net_sta_up() && net_mode() != NET_OFF) {
-    // AP or connecting — W, unless we are actively printing from serial
+    // AP or connecting: W, unless we are actively printing from serial
     if (job_printing()) g = UI_PRINTING;
     else if (job_any() && !ui_run()) g = UI_PAUSED;
     else g = UI_WIFI;

@@ -17,20 +17,20 @@ button. No UART adapter, no Centronics hat, no +12 V.
 | Jiffy box 130 × 68 × 44 mm | HB6013 | Tight but the UNO sits along the length |
 | Mini-DIN-8 male | PP0370 | Typewriter end. Pin 5 unsoldered. |
 | 5-pin DIN panel socket | PS0348 | Interconnect on the box |
-| 5-pin DIN MIDI cable 1.8 m | Cable Matters | Must be 1:1 — test all five pins |
+| 5-pin DIN MIDI cable 1.8 m | Cable Matters | Must be 1:1. Test all five pins |
 | SPST toggle | ST0570 | RUN/PAUSE, D8 to GND |
 | Momentary push | SP0716 | CANCEL, D9 to GND |
 | Experimenter board | HP9556 | Optional 100 Ω series |
 | 100 Ω ¼ W × 4 | any | Optional series on ACK/DATA/STB/ONLINE |
 | 5 V USB-C PSU | 1 A min, 2 A preferred | Own supply, not the typewriter |
-| USB-C cable | — | Flash + serial, or power if PSU is USB-C |
-| Hookup wire, heatshrink, labels | — | Label **KX-R ONLY** |
+| USB-C cable |  | Flash + serial, or power if PSU is USB-C |
+| Hookup wire, heatshrink, labels |  | Label **KX-R ONLY** |
 
 ## Why UNO R4 WiFi
 
 GPIO is 5 V. The typewriter bus idles around 5 V. A 3.3 V board (Pico,
 ESP32 as the *application* MCU) wants level shifting; this one does not.
-The ESP32-S3 on the R4 is the radio coprocessor only — firmware is a
+The ESP32-S3 on the R4 is the radio coprocessor only. Firmware is a
 Renesas Arduino sketch (`WiFiS3`), not an ESP32 sketch.
 
 RAM is 32 kB. We stream. Do not “just buffer the PDF”.

@@ -38,7 +38,7 @@ Standard MIDI only uses pins 2, 4 and 5. Cheap “MIDI” leads leave 1 and 3
 unconnected. Our /ACK and DATA live on DIN 1 and 3. Continuity-test all
 five conductors before it ever sees the typewriter.
 
-## Mac printer / null-modem Mini-DIN-8 cables — do not use
+## Mac printer / null-modem Mini-DIN-8 cables: do not use
 
 Apple printer and some “null-modem” Mini-DIN-8 leads **swap pins**.
 That can put **+12 V on a GPIO** (or GND on DATA, etc.).
@@ -58,13 +58,13 @@ the junk box because it “fits”.
 | D7      | OUTPUT        | /ONLINE. Idle HIGH, LOW for the whole byte. |
 | D8      | INPUT_PULLUP  | RUN/PAUSE toggle (ST0570). Closed to GND = RUN. |
 | D9      | INPUT_PULLUP  | CANCEL (SP0716). Active low. |
-| GND     | —             | Shared with typewriter GND. |
+| GND     |               | Shared with typewriter GND. |
 
 Optional 100 Ω series on /ACK, DATA, /STB, /ONLINE (not on GND). Sits on
 the HP9556 experimenter board. Limits fault current if something is shorted.
 
 Do **not** add a pull-up on ACK. If you are on the bench with no typewriter
-attached, ACK will float — use serial `dry-run on` so firmware does not wait
+attached, ACK will float. Use serial `dry-run on` so firmware does not wait
 for it.
 
 ## Power

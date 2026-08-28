@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-// RFC 1179 receive-job. Stream the data file — do not spool it.
+// RFC 1179 receive-job. Stream the data file. Do not spool it.
 // Accept control-file-first OR data-file-first (CUPS often sends df first).
 // ACK is a single 0x00 octet. Source ports 721-731 are NOT enforced.
 
@@ -89,7 +89,7 @@ static void handle_top_cmd(const uint8_t *cmd, uint8_t n) {
   uint8_t code = cmd[0];
   // queue name follows, LF already stripped
   switch (code) {
-    case 0x01:  // print any waiting jobs — we already print as we stream
+    case 0x01:  // print any waiting jobs (we already print as we stream)
       client.stop();
       st = LPD_IDLE;
       break;

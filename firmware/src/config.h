@@ -1,6 +1,6 @@
 #pragma once
 
-// Pins, timeouts, hostnames. Timing values are safety-critical — see docs/protocol.md.
+// Pins, timeouts, hostnames. Timing values are safety-critical. See docs/protocol.md.
 
 #ifndef KX_FW_VERSION
 #define KX_FW_VERSION "1.0.0"
