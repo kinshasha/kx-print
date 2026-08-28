@@ -3,7 +3,11 @@
 #include <Arduino.h>
 #include <WiFiS3.h>
 #include <WiFiUdp.h>
+#if __has_include(<ArduinoMDNS.h>)
+#include <ArduinoMDNS.h>
+#else
 #include <MDNS.h>
+#endif
 #include <EEPROM.h>
 #include <string.h>
 
@@ -239,8 +243,10 @@ static void start_ap() {
   Serial.print(F("AP: "));
   Serial.println(F(KX_AP_SSID));
   uint8_t st = WiFi.beginAP(KX_AP_SSID);
-  if (st != WL_AP_LISTENING) {
-    Serial.print(F("AP start status "));
+  if (st == 0) {
+    Serial.println(F("AP start failed"));
+  } else {
+    Serial.print(F("AP status "));
     Serial.println(st);
   }
   g_mode = NET_AP;

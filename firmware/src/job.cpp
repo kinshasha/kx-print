@@ -61,15 +61,13 @@ static void pop_job_if_done() {
   }
 }
 
-static bool emit_byte(uint8_t b, void *ctx) {
+static uint8_t g_tmp[140];
+static uint8_t g_tmpn;
+
+static bool collect_byte(uint8_t b, void *ctx) {
   (void)ctx;
-  Job *j = tail_job();
-  if (!j) return false;
-  if (j->discard) {
-    return true;
-  }
-  if (!ring_push(b)) return false;
-  j->bytes++;
+  if (g_tmpn >= sizeof(g_tmp)) return false;
+  g_tmp[g_tmpn++] = b;
   return true;
 }
 
@@ -99,14 +97,30 @@ bool job_begin(const char *source) {
 bool job_has_space() {
   Job *j = tail_job();
   if (j && j->discard) return true;
-  return space() >= 8;
+  // One input byte can expand to a full form-feed (CR+LF * 65).
+  return space() >= 140;
 }
 
 bool job_feed(uint8_t c) {
   Job *j = tail_job();
   if (!j || !j->open) return false;
   if (j->discard) return true;
-  return text_feed(c, emit_byte, nullptr);
+  TextState snap;
+  text_save(&snap);
+  g_tmpn = 0;
+  if (!text_feed(c, collect_byte, nullptr)) {
+    text_load(&snap);
+    return false;
+  }
+  if (space() < g_tmpn) {
+    text_load(&snap);
+    return false;
+  }
+  for (uint8_t i = 0; i < g_tmpn; i++) {
+    ring_push(g_tmp[i]);
+    j->bytes++;
+  }
+  return true;
 }
 
 void job_end() {
