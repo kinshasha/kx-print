@@ -125,8 +125,8 @@ void serial_cli_poll() {
   while (Serial.available()) {
     int ch = Serial.read();
     if (ch < 0) break;
-    if (ch == '\r') continue;
-    if (ch == '\n') {
+    if (ch == '\r' || ch == '\n') {
+      if (ch == '\n' && llen == 0) continue;  // LF of CRLF
       line[llen] = 0;
       llen = 0;
       cmd(line);

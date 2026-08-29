@@ -36,6 +36,9 @@ Numbered on purpose. Do not skip ahead to “print War and Peace”.
 2. Otherwise STA using EEPROM or `secrets.h`.
 3. Ping `kxr540.local`. mDNS is `ArduinoMDNS`; some Android phones will
    not resolve `.local`. Use the IP from `status`.
+4. Browser status (no serial): `http://kxr540.local/status` or
+   `http://10.1.1.10/status`. JSON is `/status.json`. Cancel is
+   `POST /cancel` (the page has a button).
 
 ## 4. Idle levels, still no printing
 

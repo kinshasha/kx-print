@@ -1,5 +1,9 @@
 #include "net.h"
 #include "config.h"
+#include "job.h"
+#include "kx_protocol.h"
+#include "text.h"
+#include "ui.h"
 #include <Arduino.h>
 #include <WiFiS3.h>
 #include <WiFiUdp.h>
@@ -157,6 +161,129 @@ static bool form_get(char *body, const char *key, char *out, uint8_t outlen) {
   return false;
 }
 
+
+static bool req_path_is(const char *req, const char *path) {
+  const char *p = req;
+  while (*p && *p != ' ') p++;
+  while (*p == ' ') p++;
+  size_t n = strlen(path);
+  if (strncmp(p, path, n) != 0) return false;
+  char end = p[n];
+  return end == ' ' || end == '?' || end == '\r' || end == '\n';
+}
+
+static void http_headers(WiFiClient &c, const char *ctype, int code = 200) {
+  if (code == 200) c.println(F("HTTP/1.1 200 OK"));
+  else if (code == 303) c.println(F("HTTP/1.1 303 See Other"));
+  else c.println(F("HTTP/1.1 204 No Content"));
+  c.print(F("Content-Type: "));
+  c.println(ctype);
+  c.println(F("Cache-Control: no-store"));
+  c.println(F("Connection: close"));
+}
+
+static void json_str(WiFiClient &c, const char *s) {
+  c.print('"');
+  for (; s && *s; s++) {
+    char ch = *s;
+    if (ch == '"' || ch == '\\') c.print('\\');
+    if (ch == '\r' || ch == '\n') continue;
+    c.print(ch);
+  }
+  c.print('"');
+}
+
+static const char *net_mode_str() {
+  switch (net_mode()) {
+    case NET_AP: return "AP";
+    case NET_STA: return "STA";
+    case NET_STA_CONNECTING: return "connecting";
+    default: return "off";
+  }
+}
+
+static void http_status_json(WiFiClient &c) {
+  char ip[16];
+  net_local_ip(ip, sizeof(ip));
+  bool ack_low = digitalRead(PIN_ACK) == LOW;
+  http_headers(c, "application/json");
+  c.println();
+  c.print(F("{\"fw\":\""));
+  c.print(F(KX_FW_VERSION));
+  c.print(F("\",\"host\":\""));
+  c.print(KX_HOSTNAME);
+  c.print(F(".local\",\"queue\":\""));
+  c.print(KX_QUEUE);
+  c.print(F("\",\"net\":\""));
+  c.print(net_mode_str());
+  c.print(F("\",\"ssid\":"));
+  json_str(c, net_ssid());
+  c.print(F(",\"ip\":"));
+  json_str(c, ip);
+  c.print(F(",\"run\":\""));
+  c.print(ui_run() ? "RUN" : "PAUSE");
+  c.print(F("\",\"jobs\":"));
+  c.print(job_queued());
+  c.print(F(",\"buffered\":"));
+  c.print(job_buffered());
+  c.print(F(",\"source\":"));
+  json_str(c, job_source());
+  c.print(F(",\"pageLine\":"));
+  c.print(text_line_on_page());
+  c.print(F(",\"formLength\":"));
+  c.print(text_form_length());
+  c.print(F(",\"dryRun\":"));
+  c.print(kx_is_dry_run() ? "true" : "false");
+  c.print(F(",\"ack\":\""));
+  c.print(ack_low ? "LOW" : "HIGH");
+  c.print(F("\",\"ackIdleOk\":"));
+  c.print(ack_low ? "true" : "false");
+  c.print(F(",\"error\":"));
+  c.print(job_error() ? "true" : "false");
+  c.println('}');
+}
+
+static void http_status_html(WiFiClient &c) {
+  char ip[16];
+  net_local_ip(ip, sizeof(ip));
+  bool ack_low = digitalRead(PIN_ACK) == LOW;
+  http_headers(c, "text/html");
+  c.println();
+  c.println(F("<!DOCTYPE html><html><head><meta name=viewport content='width=device-width'>"));
+  c.println(F("<meta http-equiv=refresh content=3>"));
+  c.println(F("<title>KX-Print status</title></head><body>"));
+  c.println(F("<h1>KX-Print</h1><pre>"));
+  c.print(F("fw      ")); c.println(F(KX_FW_VERSION));
+  c.print(F("host    ")); c.print(KX_HOSTNAME); c.println(F(".local"));
+  c.print(F("queue   ")); c.println(KX_QUEUE);
+  c.print(F("net     ")); c.println(net_mode_str());
+  c.print(F("ssid    ")); c.println(net_ssid());
+  c.print(F("ip      ")); c.println(ip);
+  c.print(F("run     ")); c.println(ui_run() ? F("RUN") : F("PAUSE"));
+  c.print(F("jobs    ")); c.print(job_queued());
+  c.print(F("  buffered ")); c.println(job_buffered());
+  c.print(F("source  ")); c.println(job_source());
+  c.print(F("page    line ")); c.print(text_line_on_page());
+  c.print(F(" / ")); c.println(text_form_length());
+  c.print(F("dry-run ")); c.println(kx_is_dry_run() ? F("on") : F("off"));
+  c.print(F("ACK pin ")); c.println(ack_low ? F("LOW (idle OK)") : F("HIGH"));
+  c.print(F("error   ")); c.println(job_error() ? F("YES") : F("no"));
+  c.println(F("</pre>"));
+  c.println(F("<form method=POST action=/cancel><input type=submit value=Cancel></form>"));
+  c.println(F("<p><a href=/status.json>json</a> · <a href=/>setup</a></p>"));
+  c.println(F("</body></html>"));
+}
+
+static void http_cancel(WiFiClient &c) {
+  if (job_error()) job_clear_error();
+  job_cancel_current();
+  c.println(F("HTTP/1.1 303 See Other"));
+  c.println(F("Location: /status"));
+  c.println(F("Cache-Control: no-store"));
+  c.println(F("Connection: close"));
+  c.println();
+}
+
 static void http_page(WiFiClient &c, bool saved) {
   c.println(F("HTTP/1.1 200 OK"));
   c.println(F("Content-Type: text/html"));
@@ -174,6 +301,7 @@ static void http_page(WiFiClient &c, bool saved) {
     c.println(F("Password<br><input type=password name=pass maxlength=64><br><br>"));
     c.println(F("<input type=submit value=Save>"));
     c.println(F("</form>"));
+    c.println(F("<p><a href=/status>status</a></p>"));
   }
   c.println(F("</body></html>"));
 }
@@ -211,6 +339,30 @@ headers_done:
   if (cl) content_len = atoi(cl + 15);
   if (content_len < 0) content_len = 0;
   if (content_len > (int)sizeof(req) - 1) content_len = sizeof(req) - 1;
+
+  if (req_path_is(req, "/status.json")) {
+    http_status_json(c);
+    c.stop();
+    return;
+  }
+  if (req_path_is(req, "/status")) {
+    http_status_html(c);
+    c.stop();
+    return;
+  }
+  if (is_post && req_path_is(req, "/cancel")) {
+    int drain = content_len;
+    t0 = millis();
+    while (drain > 0 && (uint32_t)(millis() - t0) < 2000) {
+      if (c.available()) {
+        c.read();
+        drain--;
+      }
+    }
+    http_cancel(c);
+    c.stop();
+    return;
+  }
 
   if (is_post && is_save && content_len > 0) {
     n = 0;
@@ -264,12 +416,18 @@ static bool start_sta() {
   uint8_t st;
   if (g_creds.pass[0]) st = WiFi.begin(g_creds.ssid, g_creds.pass);
   else st = WiFi.begin(g_creds.ssid);
+  g_sta_last_try = millis();
   if (st != WL_CONNECTED) {
     Serial.println(F("STA failed"));
     return false;
   }
-  g_mode = NET_STA;
   ip_to_buf();
+  if (!g_ip[0] || strcmp(g_ip, "0.0.0.0") == 0) {
+    Serial.println(F("STA associated, waiting for DHCP"));
+    g_mode = NET_STA_CONNECTING;
+    return true;
+  }
+  g_mode = NET_STA;
   Serial.print(F("STA IP "));
   Serial.println(g_ip);
   http.begin();
@@ -300,15 +458,27 @@ void net_poll() {
   http_poll();
   net_mdns_run();
 
+  if (g_mode == NET_STA_CONNECTING) {
+    if (WiFi.status() == WL_CONNECTED) {
+      ip_to_buf();
+      if (g_ip[0] && strcmp(g_ip, "0.0.0.0") != 0) {
+        g_mode = NET_STA;
+        Serial.print(F("STA IP "));
+        Serial.println(g_ip);
+        http.begin();
+        mdns_start();
+      }
+    } else if ((uint32_t)(millis() - g_sta_last_try) > 15000) {
+      Serial.println(F("STA retry"));
+      start_sta();
+    }
+    return;
+  }
+
   if (g_mode == NET_STA && WiFi.status() != WL_CONNECTED) {
     Serial.println(F("STA dropped"));
     g_mdns_up = false;
-    if ((uint32_t)(millis() - g_sta_last_try) > 15000) {
-      g_sta_last_try = millis();
-      if (!start_sta()) {
-        // stay trying; don't bounce to AP while the router is rebooting
-        g_mode = NET_STA_CONNECTING;
-      }
-    }
+    g_mode = NET_STA_CONNECTING;
+    g_sta_last_try = millis();
   }
 }
