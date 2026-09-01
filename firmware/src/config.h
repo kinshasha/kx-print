@@ -3,7 +3,7 @@
 // Pins, timeouts, hostnames. Timing values are safety-critical. See docs/protocol.md.
 
 #ifndef KX_FW_VERSION
-#define KX_FW_VERSION "1.0.5-burst"
+#define KX_FW_VERSION "1.0.6"
 #endif
 
 #define PIN_ACK      4   // D4  /ACK from typewriter. INPUT, no pull-up.

@@ -298,18 +298,6 @@ static void http_status_html(WiFiClient &c) {
   c.println(F("</pre>"));
   c.println(F("<p>"));
   c.println(F("<form method=POST action=/cancel style=display:inline><input type=submit value='Cancel job'></form>"));
-  c.println(F("</p><p>DATA setup"));
-  c.println(F("<form method=POST action=/setup-us style=display:inline>"));
-  c.print(F("<input type=number name=us min=5 max=500 value="));
-  c.print(kx_data_setup_us());
-  c.println(F("><input type=submit value=Set></form>"));
-  c.println(F("<form method=POST action=/setup-us style=display:inline><button name=us value=50>50 us</button></form>"));
-  c.println(F("<form method=POST action=/setup-us style=display:inline><button name=us value=20>20 us</button></form>"));
-  c.println(F("<form method=POST action=/setup-us style=display:inline><button name=us value=10>10 us</button></form>"));
-  c.println(F("</p><p>burst"));
-  c.println(F("<form method=POST action=/burst style=display:inline><button name=n value=1>1 (classic)</button></form>"));
-  c.println(F("<form method=POST action=/burst style=display:inline><button name=n value=16>16</button></form>"));
-  c.println(F("<form method=POST action=/burst style=display:inline><button name=n value=32>32</button></form>"));
   c.println(F("</p>"));
   c.println(F("<p><a href=/wifi>Change Wi-Fi</a> · <a href=/status.json>json</a></p>"));
   c.println(F("</body></html>"));
@@ -395,20 +383,8 @@ static void http_page(WiFiClient &c, bool saved) {
   c.println(F("<form method=GET action=/status.json><input type=submit value=JSON></form>"));
   c.println(F("<form method=POST action=/cancel><input type=submit value='Cancel job'></form>"));
   c.println(F("<form method=GET action=/wifi><input type=submit value='Change Wi-Fi'></form>"));
-  c.println(F("</p><p>burst /burst</p><p>"));
-  c.println(F("<form method=POST action=/burst><button name=n value=1>1 classic</button></form>"));
-  c.println(F("<form method=POST action=/burst><button name=n value=16>16</button></form>"));
-  c.println(F("<form method=POST action=/burst><button name=n value=32>32</button></form>"));
-  c.println(F("</p><p>DATA setup /setup-us</p><p>"));
-  c.println(F("<form method=POST action=/setup-us>"));
-  c.print(F("<input type=number name=us min=5 max=500 value="));
-  c.print(kx_data_setup_us());
-  c.println(F("><input type=submit value=Set></form>"));
-  c.println(F("<form method=POST action=/setup-us><button name=us value=50>50 us</button></form>"));
-  c.println(F("<form method=POST action=/setup-us><button name=us value=20>20 us</button></form>"));
-  c.println(F("<form method=POST action=/setup-us><button name=us value=10>10 us</button></form>"));
   c.println(F("</p>"));
-  c.println(F("<p><small>GET / &nbsp; GET /status &nbsp; GET /status.json &nbsp; POST /cancel &nbsp; POST /setup-us &nbsp; POST /burst &nbsp; GET /wifi &nbsp; POST /save</small></p>"));
+  c.println(F("<p><small>GET / &nbsp; GET /status &nbsp; GET /status.json &nbsp; POST /cancel &nbsp; GET /wifi &nbsp; POST /save</small></p>"));
   c.println(F("</body></html>"));
 }
 
@@ -474,45 +450,6 @@ headers_done:
     c.stop();
     return;
   }
-  if (is_post && req_path_is(req, "/burst")) {
-    n = 0;
-    t0 = millis();
-    while (n < (uint16_t)content_len && n < sizeof(req) - 1 &&
-           (uint32_t)(millis() - t0) < 2000) {
-      if (c.available()) req[n++] = (char)c.read();
-    }
-    req[n] = 0;
-    char nbuf[8];
-    if (form_get(req, "n", nbuf, sizeof(nbuf)) && nbuf[0]) {
-      long v = atol(nbuf);
-      if (v < 1) v = 1;
-      if (v > PRINT_BURST_MAX) v = PRINT_BURST_MAX;
-      job_set_burst((uint8_t)v);
-    }
-    http_redirect_status(c);
-    c.stop();
-    return;
-  }
-  if (is_post && req_path_is(req, "/setup-us")) {
-    n = 0;
-    t0 = millis();
-    while (n < (uint16_t)content_len && n < sizeof(req) - 1 &&
-           (uint32_t)(millis() - t0) < 2000) {
-      if (c.available()) req[n++] = (char)c.read();
-    }
-    req[n] = 0;
-    char usbuf[8];
-    if (form_get(req, "us", usbuf, sizeof(usbuf)) && usbuf[0]) {
-      long v = atol(usbuf);
-      if (v < 5) v = 5;
-      if (v > 500) v = 500;
-      kx_set_data_setup_us((uint16_t)v);
-    }
-    http_redirect_status(c);
-    c.stop();
-    return;
-  }
-
   if (is_post && is_save && content_len > 0) {
     n = 0;
     t0 = millis();
