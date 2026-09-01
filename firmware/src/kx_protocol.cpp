@@ -11,7 +11,7 @@
 // Per bit: DATA, 50 us, /STB HIGH→LOW, wait ACK HIGH, /STB LOW→HIGH, wait ACK LOW.
 // This is the opposite of RP-K105 / DE-9 thermal writers. Do not wait ACK-low-then-high.
 //
-// ACK timeout 1500 ms is our watchdog; original adapter code waits forever.
+// ACK timeout 8000 ms. Carriage return can exceed 1.5 s. xunker waits forever.
 
 static bool g_dry;
 static bool g_timeout;

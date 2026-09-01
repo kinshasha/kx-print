@@ -3,7 +3,7 @@
 // Pins, timeouts, hostnames. Timing values are safety-critical. See docs/protocol.md.
 
 #ifndef KX_FW_VERSION
-#define KX_FW_VERSION "1.0.6"
+#define KX_FW_VERSION "1.0.7"
 #endif
 
 #define PIN_ACK      4   // D4  /ACK from typewriter. INPUT, no pull-up.
@@ -13,7 +13,7 @@
 #define PIN_RUN      8   // D8  RUN/PAUSE toggle. INPUT_PULLUP, closed to GND = RUN.
 #define PIN_CANCEL   9   // D9  CANCEL momentary. INPUT_PULLUP, active low.
 
-#define ACK_TIMEOUT_MS     1500
+#define ACK_TIMEOUT_MS     8000
 #define DATA_SETUP_US        50
 #define PRINT_BURST_DEFAULT    16
 #define PRINT_BURST_MAX        64
