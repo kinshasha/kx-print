@@ -21,6 +21,7 @@ static void help() {
   Serial.println(F("  print             paste mode; end with a line of ."));
   Serial.println(F("  dry-run [on|off]  protocol log, no ACK required"));
   Serial.println(F("  setup-us [n]     DATA setup microseconds (5-500)"));
+  Serial.println(F("  burst [n|on|off] chars per tick (1=classic, on=16)"));
   Serial.println(F("  cancel            cancel current job"));
 }
 
@@ -48,6 +49,7 @@ void serial_cli_print_status() {
   Serial.print(F(" / ")); Serial.println(text_form_length());
   Serial.print(F("dry-run ")); Serial.println(kx_is_dry_run() ? F("on") : F("off"));
   Serial.print(F("setup-us ")); Serial.println(kx_data_setup_us());
+  Serial.print(F("burst    ")); Serial.println(job_burst());
   Serial.print(F("ACK pin ")); Serial.println(digitalRead(PIN_ACK) == LOW ? F("LOW (idle OK)") : F("HIGH"));
   Serial.print(F("error   ")); Serial.println(job_error() ? F("YES") : F("no"));
 }
@@ -103,6 +105,17 @@ static void cmd(char *s) {
     }
     Serial.print(F("setup-us "));
     Serial.println(kx_data_setup_us());
+  } else if (!strcmp(s, "burst")) {
+    if (!strcmp(arg, "on")) job_set_burst(PRINT_BURST_DEFAULT);
+    else if (!strcmp(arg, "off")) job_set_burst(1);
+    else if (*arg) {
+      long v = atol(arg);
+      if (v < 1) v = 1;
+      if (v > PRINT_BURST_MAX) v = PRINT_BURST_MAX;
+      job_set_burst((uint8_t)v);
+    }
+    Serial.print(F("burst "));
+    Serial.println(job_burst());
   } else if (!strcmp(s, "print")) {
     if (!*arg) {
       if (!job_begin("serial")) {

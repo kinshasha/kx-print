@@ -20,3 +20,5 @@ bool job_error();
 void job_clear_error();
 bool job_paused_hw();              // RUN switch open
 bool job_run_hw();
+uint8_t job_burst();              // chars per loop tick, 1 = classic
+void job_set_burst(uint8_t n);    // 1..PRINT_BURST_MAX

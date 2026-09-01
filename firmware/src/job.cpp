@@ -21,6 +21,15 @@ static uint8_t j_head, j_n;
 static bool g_error;
 static bool g_probed;
 static bool g_printing;
+static uint8_t g_burst = PRINT_BURST_DEFAULT;
+
+uint8_t job_burst() { return g_burst; }
+
+void job_set_burst(uint8_t n) {
+  if (n < 1) n = 1;
+  if (n > PRINT_BURST_MAX) n = PRINT_BURST_MAX;
+  g_burst = n;
+}
 
 static uint16_t space() {
   return (uint16_t)(RING_SIZE - r_count);
@@ -208,25 +217,28 @@ void job_print_poll() {
     g_probed = true;
   }
 
-  uint8_t b;
-  if (!ring_pop(&b)) return;
-  if (j->bytes) j->bytes--;
-
   g_printing = true;
   kx_clear_abort();
-  if (!kx_send_byte(b)) {
-    g_printing = false;
-    if (kx_last_timeout()) {
-      g_error = true;
-      Serial.println(F("ERROR: ACK timeout, safe idle. CANCEL to recover."));
+  uint8_t n = g_burst;
+  if (n < 1) n = 1;
+  while (n--) {
+    j = head_job();
+    if (!j || j->discard || !j->bytes) break;
+    uint8_t b;
+    if (!ring_pop(&b)) break;
+    if (j->bytes) j->bytes--;
+    if (!kx_send_byte(b)) {
+      g_printing = false;
+      if (kx_last_timeout()) {
+        g_error = true;
+        Serial.println(F("ERROR: ACK timeout, safe idle. CANCEL to recover."));
+        job_cancel_current();
+      }
+      return;
     }
-    // put the byte back if abort (pause/cancel) rather than timeout? cancel discards.
-    if (kx_last_timeout()) {
-      job_cancel_current();
-    }
-    return;
+    pop_job_if_done();
+    if (kx_abort_requested() || !ui_run()) break;
   }
-  pop_job_if_done();
 }
 
 bool job_printing() { return g_printing; }

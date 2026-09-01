@@ -57,14 +57,19 @@ bool kx_ack_idle_low() {
 
 static bool wait_ack(uint8_t want) {
   const uint32_t t0 = millis();
+  uint32_t last_yield = t0;
   while (digitalRead(PIN_ACK) != want) {
-    if ((uint32_t)(millis() - t0) >= ACK_TIMEOUT_MS) {
+    uint32_t now = millis();
+    if ((now - t0) >= ACK_TIMEOUT_MS) {
       return false;
     }
     if (kx_abort_requested()) {
       return false;
     }
-    kx_yield();
+    if ((now - last_yield) >= ACK_YIELD_MS) {
+      last_yield = now;
+      kx_yield();
+    }
   }
   return true;
 }
