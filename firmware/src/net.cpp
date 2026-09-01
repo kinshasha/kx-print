@@ -240,6 +240,8 @@ static void http_status_json(WiFiClient &c) {
   c.print(ack_low ? "true" : "false");
   c.print(F(",\"error\":"));
   c.print(job_error() ? "true" : "false");
+  c.print(F(",\"setupUs\":"));
+  c.print(kx_data_setup_us());
   c.println('}');
 }
 
@@ -266,6 +268,7 @@ static void http_status_html(WiFiClient &c) {
   c.print(F("page    line ")); c.print(text_line_on_page());
   c.print(F(" / ")); c.println(text_form_length());
   c.print(F("dry-run ")); c.println(kx_is_dry_run() ? F("on") : F("off"));
+  c.print(F("setup-us ")); c.println(kx_data_setup_us());
   c.print(F("ACK pin ")); c.println(ack_low ? F("LOW (idle OK)") : F("HIGH"));
   c.print(F("error   ")); c.println(job_error() ? F("YES") : F("no"));
   c.println(F("</pre>"));

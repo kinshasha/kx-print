@@ -11,3 +11,5 @@ bool kx_last_timeout();
 void kx_clear_timeout();
 void kx_set_dry_run(bool on);
 bool kx_is_dry_run();
+uint16_t kx_data_setup_us();     // DATA setup before /STB, microseconds
+void kx_set_data_setup_us(uint16_t us);  // clamped 5..500, not persisted

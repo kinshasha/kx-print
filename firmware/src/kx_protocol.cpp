@@ -15,9 +15,18 @@
 
 static bool g_dry;
 static bool g_timeout;
+static uint16_t g_setup_us = DATA_SETUP_US;
 
 void kx_set_dry_run(bool on) { g_dry = on; }
 bool kx_is_dry_run() { return g_dry; }
+
+uint16_t kx_data_setup_us() { return g_setup_us; }
+
+void kx_set_data_setup_us(uint16_t us) {
+  if (us < 5) us = 5;
+  if (us > 500) us = 500;
+  g_setup_us = us;
+}
 bool kx_last_timeout() { return g_timeout; }
 void kx_clear_timeout() { g_timeout = false; }
 
@@ -76,11 +85,11 @@ bool kx_send_byte(uint8_t b) {
     digitalWrite(PIN_ONLINE, LOW);
     for (uint8_t i = 0; i < 8; i++) {
       digitalWrite(PIN_DATA, (b & 1) ? HIGH : LOW);
-      delayMicroseconds(DATA_SETUP_US);
+      delayMicroseconds(g_setup_us);
       digitalWrite(PIN_STB, LOW);
-      delayMicroseconds(DATA_SETUP_US);
+      delayMicroseconds(g_setup_us);
       digitalWrite(PIN_STB, HIGH);
-      delayMicroseconds(DATA_SETUP_US);
+      delayMicroseconds(g_setup_us);
       b >>= 1;
       if (kx_abort_requested()) {
         kx_safe_idle();
@@ -100,7 +109,7 @@ bool kx_send_byte(uint8_t b) {
     }
 
     digitalWrite(PIN_DATA, (b & 1) ? HIGH : LOW);
-    delayMicroseconds(DATA_SETUP_US);
+    delayMicroseconds(g_setup_us);
 
     digitalWrite(PIN_STB, LOW);
     if (!wait_ack(HIGH)) {

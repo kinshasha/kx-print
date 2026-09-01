@@ -20,6 +20,7 @@ static void help() {
   Serial.println(F("  print [text]      print rest of line (CR+LF)"));
   Serial.println(F("  print             paste mode; end with a line of ."));
   Serial.println(F("  dry-run [on|off]  protocol log, no ACK required"));
+  Serial.println(F("  setup-us [n]     DATA setup microseconds (5-500)"));
   Serial.println(F("  cancel            cancel current job"));
 }
 
@@ -46,6 +47,7 @@ void serial_cli_print_status() {
   Serial.print(F("page    line ")); Serial.print(text_line_on_page());
   Serial.print(F(" / ")); Serial.println(text_form_length());
   Serial.print(F("dry-run ")); Serial.println(kx_is_dry_run() ? F("on") : F("off"));
+  Serial.print(F("setup-us ")); Serial.println(kx_data_setup_us());
   Serial.print(F("ACK pin ")); Serial.println(digitalRead(PIN_ACK) == LOW ? F("LOW (idle OK)") : F("HIGH"));
   Serial.print(F("error   ")); Serial.println(job_error() ? F("YES") : F("no"));
 }
@@ -92,6 +94,15 @@ static void cmd(char *s) {
     else kx_set_dry_run(!kx_is_dry_run());
     Serial.print(F("dry-run "));
     Serial.println(kx_is_dry_run() ? F("on") : F("off"));
+  } else if (!strcmp(s, "setup-us")) {
+    if (*arg) {
+      long v = atol(arg);
+      if (v < 5) v = 5;
+      if (v > 500) v = 500;
+      kx_set_data_setup_us((uint16_t)v);
+    }
+    Serial.print(F("setup-us "));
+    Serial.println(kx_data_setup_us());
   } else if (!strcmp(s, "print")) {
     if (!*arg) {
       if (!job_begin("serial")) {
