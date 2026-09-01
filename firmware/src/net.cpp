@@ -359,24 +359,45 @@ static void http_page(WiFiClient &c, bool saved) {
   c.println(F("Connection: close"));
   c.println();
   c.println(F("<!DOCTYPE html><html><head><meta name=viewport content='width=device-width'>"));
-  c.println(F("<title>KX-Print</title></head><body>"));
-  c.println(F("<h1>KX-Print setup</h1>"));
+  c.println(F("<title>KX-Print</title>"));
+  c.println(F("<style>form{display:inline;margin:0 .3em .3em 0}input[type=submit],button{font-size:1.1em;padding:.4em .7em}</style>"));
+  c.println(F("</head><body>"));
+  c.println(F("<h1>KX-Print</h1>"));
   if (saved) {
     c.println(F("<p>Saved. Rebooting into your Wi-Fi&hellip;</p>"));
-  } else {
-    if (wifi_associated()) {
-      c.print(F("<p>Associated with <b>"));
-      c.print(net_ssid());
-      c.println(F("</b>. Saving a new SSID replaces it and reboots.</p>"));
-    }
-    c.println(F("<p>Join this page, type home Wi-Fi, hit Save.</p>"));
-    c.println(F("<form method=POST action=/save>"));
-    c.println(F("SSID<br><input name=ssid maxlength=32><br><br>"));
-    c.println(F("Password<br><input type=password name=pass maxlength=64><br><br>"));
-    c.println(F("<input type=submit value=Save>"));
-    c.println(F("</form>"));
-    c.println(F("<p><a href=/status>status</a> · <a href=/wifi>change Wi-Fi</a></p>"));
+    c.println(F("</body></html>"));
+    return;
   }
+  if (wifi_associated()) {
+    c.print(F("<p>Associated with <b>"));
+    c.print(net_ssid());
+    c.println(F("</b></p>"));
+  } else if (g_mode == NET_STA_CONNECTING) {
+    c.print(F("<p>Not associated. Joining <b>"));
+    c.print(net_ssid());
+    c.println(F("</b></p>"));
+  } else if (g_mode == NET_AP) {
+    c.print(F("<p>AP <b>"));
+    c.print(F(KX_AP_SSID));
+    c.println(F("</b>. Not on home Wi-Fi.</p>"));
+  } else {
+    c.println(F("<p>Not associated.</p>"));
+  }
+  c.println(F("<p>"));
+  c.println(F("<form method=GET action=/status><input type=submit value=Status></form>"));
+  c.println(F("<form method=GET action=/status.json><input type=submit value=JSON></form>"));
+  c.println(F("<form method=POST action=/cancel><input type=submit value='Cancel job'></form>"));
+  c.println(F("<form method=GET action=/wifi><input type=submit value='Change Wi-Fi'></form>"));
+  c.println(F("</p><p>DATA setup /setup-us</p><p>"));
+  c.println(F("<form method=POST action=/setup-us>"));
+  c.print(F("<input type=number name=us min=5 max=500 value="));
+  c.print(kx_data_setup_us());
+  c.println(F("><input type=submit value=Set></form>"));
+  c.println(F("<form method=POST action=/setup-us><button name=us value=50>50 us</button></form>"));
+  c.println(F("<form method=POST action=/setup-us><button name=us value=20>20 us</button></form>"));
+  c.println(F("<form method=POST action=/setup-us><button name=us value=10>10 us</button></form>"));
+  c.println(F("</p>"));
+  c.println(F("<p><small>GET / &nbsp; GET /status &nbsp; GET /status.json &nbsp; POST /cancel &nbsp; POST /setup-us &nbsp; GET /wifi &nbsp; POST /save</small></p>"));
   c.println(F("</body></html>"));
 }
 
