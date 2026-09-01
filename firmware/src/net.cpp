@@ -202,6 +202,10 @@ static const char *net_mode_str() {
   }
 }
 
+static bool wifi_associated() {
+  return g_mode == NET_STA && WiFi.status() == WL_CONNECTED;
+}
+
 static void http_status_json(WiFiClient &c) {
   char ip[16];
   net_local_ip(ip, sizeof(ip));
@@ -242,6 +246,10 @@ static void http_status_json(WiFiClient &c) {
   c.print(job_error() ? "true" : "false");
   c.print(F(",\"setupUs\":"));
   c.print(kx_data_setup_us());
+  c.print(F(",\"associated\":"));
+  c.print(wifi_associated() ? "true" : "false");
+  c.print(F(",\"configuredSsid\":"));
+  json_str(c, net_ssid());
   c.println('}');
 }
 
@@ -249,17 +257,30 @@ static void http_status_html(WiFiClient &c) {
   char ip[16];
   net_local_ip(ip, sizeof(ip));
   bool ack_low = digitalRead(PIN_ACK) == LOW;
+  bool assoc = wifi_associated();
   http_headers(c, "text/html");
   c.println();
   c.println(F("<!DOCTYPE html><html><head><meta name=viewport content='width=device-width'>"));
-  c.println(F("<meta http-equiv=refresh content=3>"));
+  c.println(F("<meta http-equiv=refresh content=8>"));
   c.println(F("<title>KX-Print status</title></head><body>"));
   c.println(F("<h1>KX-Print</h1><pre>"));
   c.print(F("fw      ")); c.println(F(KX_FW_VERSION));
   c.print(F("host    ")); c.print(KX_HOSTNAME); c.println(F(".local"));
   c.print(F("queue   ")); c.println(KX_QUEUE);
   c.print(F("net     ")); c.println(net_mode_str());
-  c.print(F("ssid    ")); c.println(net_ssid());
+  if (assoc) {
+    c.print(F("wifi    associated: "));
+    c.println(net_ssid());
+  } else if (g_mode == NET_STA_CONNECTING) {
+    c.print(F("wifi    not associated, joining "));
+    c.println(net_ssid());
+  } else if (g_mode == NET_AP) {
+    c.print(F("wifi    AP "));
+    c.print(F(KX_AP_SSID));
+    c.println(F(" (not on home Wi-Fi)"));
+  } else {
+    c.println(F("wifi    not associated"));
+  }
   c.print(F("ip      ")); c.println(ip);
   c.print(F("run     ")); c.println(ui_run() ? F("RUN") : F("PAUSE"));
   c.print(F("jobs    ")); c.print(job_queued());
@@ -272,19 +293,64 @@ static void http_status_html(WiFiClient &c) {
   c.print(F("ACK pin ")); c.println(ack_low ? F("LOW (idle OK)") : F("HIGH"));
   c.print(F("error   ")); c.println(job_error() ? F("YES") : F("no"));
   c.println(F("</pre>"));
-  c.println(F("<form method=POST action=/cancel><input type=submit value=Cancel></form>"));
-  c.println(F("<p><a href=/status.json>json</a> · <a href=/>setup</a></p>"));
+  c.println(F("<p>"));
+  c.println(F("<form method=POST action=/cancel style=display:inline><input type=submit value='Cancel job'></form>"));
+  c.println(F("</p><p>DATA setup"));
+  c.println(F("<form method=POST action=/setup-us style=display:inline>"));
+  c.print(F("<input type=number name=us min=5 max=500 value="));
+  c.print(kx_data_setup_us());
+  c.println(F("><input type=submit value=Set></form>"));
+  c.println(F("<form method=POST action=/setup-us style=display:inline><button name=us value=50>50 us</button></form>"));
+  c.println(F("<form method=POST action=/setup-us style=display:inline><button name=us value=20>20 us</button></form>"));
+  c.println(F("<form method=POST action=/setup-us style=display:inline><button name=us value=10>10 us</button></form>"));
+  c.println(F("</p>"));
+  c.println(F("<p><a href=/wifi>Change Wi-Fi</a> · <a href=/status.json>json</a></p>"));
   c.println(F("</body></html>"));
 }
 
-static void http_cancel(WiFiClient &c) {
-  if (job_error()) job_clear_error();
-  job_cancel_current();
+static void http_wifi(WiFiClient &c) {
+  http_headers(c, "text/html");
+  c.println();
+  c.println(F("<!DOCTYPE html><html><head><meta name=viewport content='width=device-width'>"));
+  c.println(F("<title>KX-Print Wi-Fi</title></head><body>"));
+  c.println(F("<h1>Change Wi-Fi</h1>"));
+  if (wifi_associated()) {
+    c.print(F("<p>Associated with <b>"));
+    c.print(net_ssid());
+    c.println(F("</b>.</p>"));
+  } else if (g_mode == NET_STA_CONNECTING) {
+    c.print(F("<p>Not associated. Trying <b>"));
+    c.print(net_ssid());
+    c.println(F("</b>.</p>"));
+  } else if (g_mode == NET_AP) {
+    c.print(F("<p>Soft AP <b>"));
+    c.print(F(KX_AP_SSID));
+    c.println(F("</b>. Not on a home network.</p>"));
+  } else {
+    c.println(F("<p>Not associated.</p>"));
+  }
+  c.println(F("<p>Join a different network. Saves and reboots.</p>"));
+  c.println(F("<form method=POST action=/save>"));
+  c.println(F("SSID<br><input name=ssid maxlength=32><br><br>"));
+  c.println(F("Password<br><input type=password name=pass maxlength=64><br><br>"));
+  c.println(F("<input type=submit value='Save and reboot'>"));
+  c.println(F("</form>"));
+  c.println(F("<p><a href=/status>status</a></p>"));
+  c.println(F("</body></html>"));
+}
+
+static void http_redirect_status(WiFiClient &c) {
   c.println(F("HTTP/1.1 303 See Other"));
   c.println(F("Location: /status"));
   c.println(F("Cache-Control: no-store"));
   c.println(F("Connection: close"));
   c.println();
+}
+
+static void http_cancel(WiFiClient &c) {
+  if (job_error()) job_clear_error();
+  job_cancel_current();
+  http_redirect_status(c);
 }
 
 static void http_page(WiFiClient &c, bool saved) {
@@ -298,13 +364,18 @@ static void http_page(WiFiClient &c, bool saved) {
   if (saved) {
     c.println(F("<p>Saved. Rebooting into your Wi-Fi&hellip;</p>"));
   } else {
+    if (wifi_associated()) {
+      c.print(F("<p>Associated with <b>"));
+      c.print(net_ssid());
+      c.println(F("</b>. Saving a new SSID replaces it and reboots.</p>"));
+    }
     c.println(F("<p>Join this page, type home Wi-Fi, hit Save.</p>"));
     c.println(F("<form method=POST action=/save>"));
     c.println(F("SSID<br><input name=ssid maxlength=32><br><br>"));
     c.println(F("Password<br><input type=password name=pass maxlength=64><br><br>"));
     c.println(F("<input type=submit value=Save>"));
     c.println(F("</form>"));
-    c.println(F("<p><a href=/status>status</a></p>"));
+    c.println(F("<p><a href=/status>status</a> · <a href=/wifi>change Wi-Fi</a></p>"));
   }
   c.println(F("</body></html>"));
 }
@@ -353,6 +424,11 @@ headers_done:
     c.stop();
     return;
   }
+  if (req_path_is(req, "/wifi")) {
+    http_wifi(c);
+    c.stop();
+    return;
+  }
   if (is_post && req_path_is(req, "/cancel")) {
     int drain = content_len;
     t0 = millis();
@@ -363,6 +439,25 @@ headers_done:
       }
     }
     http_cancel(c);
+    c.stop();
+    return;
+  }
+  if (is_post && req_path_is(req, "/setup-us")) {
+    n = 0;
+    t0 = millis();
+    while (n < (uint16_t)content_len && n < sizeof(req) - 1 &&
+           (uint32_t)(millis() - t0) < 2000) {
+      if (c.available()) req[n++] = (char)c.read();
+    }
+    req[n] = 0;
+    char usbuf[8];
+    if (form_get(req, "us", usbuf, sizeof(usbuf)) && usbuf[0]) {
+      long v = atol(usbuf);
+      if (v < 5) v = 5;
+      if (v > 500) v = 500;
+      kx_set_data_setup_us((uint16_t)v);
+    }
+    http_redirect_status(c);
     c.stop();
     return;
   }
